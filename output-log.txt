@@ -1,0 +1,237 @@
+/Users/vnarsing/go/src/github.com/example-inc/gremlin-operator/bin/kustomize build config/crd | kubectl apply -f -
+customresourcedefinition.apiextensions.k8s.io/gremlins.charts.my.domain created
+/usr/local/bin/helm-operator run
+{"level":"info","ts":1621287341.810557,"logger":"cmd","msg":"Version","Go Version":"go1.16.3","GOOS":"darwin","GOARCH":"amd64","helm-operator":"v1.7.1","commit":"c984b00c1a1f75871788bb082ee8226b5118e4da"}
+{"level":"info","ts":1621287341.815142,"logger":"cmd","msg":"Watch namespaces not configured by environment variable WATCH_NAMESPACE or file. Watching all namespaces.","Namespace":""}
+{"level":"info","ts":1621287342.23003,"logger":"controller-runtime.metrics","msg":"metrics server is starting to listen","addr":":8080"}
+{"level":"info","ts":1621287342.231373,"logger":"helm.controller","msg":"Watching resource","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","namespace":"","reconcilePeriod":"1m0s"}
+{"level":"info","ts":1621287342.231612,"logger":"controller-runtime.manager","msg":"starting metrics server","path":"/metrics"}
+{"level":"info","ts":1621287342.231704,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting EventSource","source":"kind source: charts.my.domain/v1alpha1, Kind=Gremlin"}
+{"level":"info","ts":1621287342.332353,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting Controller"}
+{"level":"info","ts":1621287342.332389,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting workers","worker count":8}
+{"level":"info","ts":1621287382.125916,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting EventSource","source":"kind source: apps/v1, Kind=DaemonSet"}
+{"level":"info","ts":1621287382.2265549,"logger":"helm.controller","msg":"Watching dependent resource","ownerApiVersion":"charts.my.domain/v1alpha1","ownerKind":"Gremlin","apiVersion":"apps/v1","kind":"DaemonSet"}
+{"level":"info","ts":1621287382.227381,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting EventSource","source":"kind source: apps/v1, Kind=Deployment"}
+{"level":"info","ts":1621287382.328332,"logger":"helm.controller","msg":"Watching dependent resource","ownerApiVersion":"charts.my.domain/v1alpha1","ownerKind":"Gremlin","apiVersion":"apps/v1","kind":"Deployment"}
+{"level":"info","ts":1621287382.3286772,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting EventSource","source":"kind source: /v1, Kind=ServiceAccount"}
+{"level":"info","ts":1621287382.4295979,"logger":"helm.controller","msg":"Watching dependent resource","ownerApiVersion":"charts.my.domain/v1alpha1","ownerKind":"Gremlin","apiVersion":"v1","kind":"ServiceAccount"}
+{"level":"info","ts":1621287382.4299798,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting EventSource","source":"kind source: rbac.authorization.k8s.io/v1, Kind=ClusterRole"}
+{"level":"info","ts":1621287382.530615,"logger":"helm.controller","msg":"Watching dependent resource","ownerApiVersion":"charts.my.domain/v1alpha1","ownerKind":"Gremlin","apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRole"}
+{"level":"info","ts":1621287382.530839,"logger":"controller-runtime.manager.controller.gremlin-controller","msg":"Starting EventSource","source":"kind source: rbac.authorization.k8s.io/v1, Kind=ClusterRoleBinding"}
+{"level":"info","ts":1621287382.631472,"logger":"helm.controller","msg":"Watching dependent resource","ownerApiVersion":"charts.my.domain/v1alpha1","ownerKind":"Gremlin","apiVersion":"rbac.authorization.k8s.io/v1","kind":"ClusterRoleBinding"}
+{"level":"info","ts":1621287382.631517,"logger":"helm.controller","msg":"Installed release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
++---
++# Source: gremlin/templates/chao-service-account.yaml
++apiVersion: v1
++kind: ServiceAccount
++metadata:
++  name: chao
++  namespace: default
++---
++# Source: gremlin/templates/gremlin-service-account.yaml
++apiVersion: v1
++kind: ServiceAccount
++metadata:
++  name: gremlin
++  namespace: default
++---
++# Source: gremlin/templates/chao-service-account.yaml
++apiVersion: rbac.authorization.k8s.io/v1
++kind: ClusterRole
++metadata:
++  name: gremlin-watcher
++rules:
++  - apiGroups: ["apps"]
++    resources: ["replicasets", "deployments", "statefulsets", "daemonsets"]
++    verbs: ["get", "watch", "list"]
++  - apiGroups: [""]
++    resources: ["pods", "nodes"]
++    verbs: ["get", "watch", "list"]
++---
++# Source: gremlin/templates/chao-service-account.yaml
++apiVersion: rbac.authorization.k8s.io/v1
++kind: ClusterRoleBinding
++metadata:
++  name: chao
++subjects:
++  - kind: ServiceAccount
++    name: chao
++    namespace: default
++roleRef:
++  apiGroup: rbac.authorization.k8s.io
++  kind: ClusterRole
++  name: gremlin-watcher
++---
++# Source: gremlin/templates/daemonset.yaml
++apiVersion: apps/v1
++kind: DaemonSet
++metadata:
++  name: gremlin-sample
++  namespace: default
++  labels:
++    app.kubernetes.io/name: gremlin
++    helm.sh/chart: gremlin-0.2.2
++    app.kubernetes.io/instance: gremlin-sample
++    app.kubernetes.io/managed-by: Helm
++    version: v1
++spec:
++  selector:
++    matchLabels:
++      app.kubernetes.io/name: gremlin
++  template:
++    metadata:
++      labels:
++        app.kubernetes.io/name: gremlin
++        helm.sh/chart: gremlin-0.2.2
++        app.kubernetes.io/instance: gremlin-sample
++        app.kubernetes.io/managed-by: Helm
++        version: v1
++    spec:
++      serviceAccountName: gremlin
++      hostPID: false
++      hostNetwork: false
++      containers:
++      - name: gremlin
++        image: gremlin/gremlin:latest
++        args: [ "daemon" ]
++        imagePullPolicy: Always
++        securityContext:
++          capabilities:
++            add:
++              - KILL
++              - NET_ADMIN
++              - SYS_BOOT
++              - SYS_TIME
++              - SYS_ADMIN
++              - SYS_PTRACE
++              - SETFCAP
++              - AUDIT_WRITE
++              - MKNOD
++              - SYS_CHROOT
++              - NET_RAW
++        env:
++          - name: GREMLIN_TEAM_ID
++            valueFrom:
++              secretKeyRef:
++                name:  gremlin-team-cert
++                key: GREMLIN_TEAM_ID
++          - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
++            value: file:///var/lib/gremlin/cert/gremlin.cert
++          - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
++            value: file:///var/lib/gremlin/cert/gremlin.key
++          - name: GREMLIN_IDENTIFIER
++            valueFrom:
++              fieldRef:
++                fieldPath: spec.nodeName
++          - name: GREMLIN_CLIENT_TAGS
++            value:
++          - name: GREMLIN_DOCKER_IMAGE
++            value: gremlin/gremlin:latest
++          - name: GREMLIN_SERVICE_URL
++            value: https://api.gremlin.com/v1
++        volumeMounts:
++          - name: gremlin-state
++            mountPath: /var/lib/gremlin
++            readOnly: false
++          - name: gremlin-logs
++            mountPath: /var/log/gremlin
++            readOnly: false
++          - name: cgroup-root
++            mountPath: /sys/fs/cgroup
++            readOnly: true
++          - name: runtime-sock
++            mountPath: /var/run/docker.sock
++            readOnly: true
++          - name: shutdown-trigger
++            mountPath: /sysrq
++          - name: gremlin-cert
++            mountPath: /var/lib/gremlin/cert
++            readOnly: true
++      volumes:
++        - name: cgroup-root
++          hostPath:
++            path: /sys/fs/cgroup
++        - name: runtime-sock
++          hostPath:
++            path: /var/run/docker.sock
++        # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
++        # This should be shared with the Kubernetes host
++        - name: gremlin-state
++          hostPath:
++            path: /var/lib/gremlin
++        # The Gremlin daemon forwards logs from the Gremlin sidecars to the Gremlin control plane
++        # These logs should be shared with the host
++        - name: gremlin-logs
++          hostPath:
++            path: /var/log/gremlin
++        - name: shutdown-trigger
++          hostPath:
++            path: /proc/sysrq-trigger
++        - name: gremlin-cert
++          secret:
++            secretName: gremlin-team-cert
++---
++# Source: gremlin/templates/chao-deployment.yaml
++apiVersion: apps/v1
++kind: Deployment
++metadata:
++  labels:
++    app.kubernetes.io/instance: chao
++    app.kubernetes.io/name: chao
++    app.kubernetes.io/version: "1"
++  name: chao
++  namespace: default
++spec:
++  replicas: 1
++  selector:
++    matchLabels:
++      app.kubernetes.io/instance: chao
++      app.kubernetes.io/name: chao
++      app.kubernetes.io/version: "1"
++  template:
++    metadata:
++      labels:
++        app.kubernetes.io/instance: chao
++        app.kubernetes.io/name: chao
++        app.kubernetes.io/version: "1"
++    spec:
++      serviceAccountName: chao
++      containers:
++        - image: gremlin/chao:latest
++          env:
++            - name: GREMLIN_TEAM_ID
++              valueFrom:
++                secretKeyRef:
++                  name:  gremlin-team-cert
++                  key: GREMLIN_TEAM_ID
++            - name: GREMLIN_CLUSTER_ID
++              valueFrom:
++                secretKeyRef:
++                  name:  gremlin-team-cert
++                  key: GREMLIN_CLUSTER_ID
++          args:
++            - "-api_url"
++            - "https://api.gremlin.com/v1/kubernetes"
++            - "-cert_path"
++            - "/var/lib/gremlin/cert/gremlin.cert"
++            - "-key_path"
++            - "/var/lib/gremlin/cert/gremlin.key"
++          imagePullPolicy: Always
++          name: chao
++          volumeMounts:
++          - name: gremlin-cert
++            mountPath: /var/lib/gremlin/cert
++            readOnly: true
++      volumes:
++      - name: gremlin-cert
++        secret:
++          secretName: gremlin-team-cert
+{"level":"info","ts":1621287384.427755,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287385.1902888,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287445.143636,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287505.956983,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287566.6847832,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287627.405994,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287688.113664,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287748.8297899,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
+{"level":"info","ts":1621287809.534431,"logger":"helm.controller","msg":"Reconciled release","namespace":"default","name":"gremlin-sample","apiVersion":"charts.my.domain/v1alpha1","kind":"Gremlin","release":"gremlin-sample"}
