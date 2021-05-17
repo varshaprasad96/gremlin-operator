@@ -1,0 +1,24 @@
+# permissions for end users to edit gremlins.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gremlin-editor-role
+rules:
+- apiGroups:
+  - charts.my.domain
+  resources:
+  - gremlins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - charts.my.domain
+  resources:
+  - gremlins/status
+  verbs:
+  - get

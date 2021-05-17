@@ -1,0 +1,6 @@
+# Use the 'create api' subcommand to add watches to this file.
+- group: charts.my.domain
+  version: v1alpha1
+  kind: Gremlin
+  chart: helm-charts/gremlin
+#+kubebuilder:scaffold:watch

@@ -1,0 +1,90 @@
+apiVersion: charts.my.domain/v1alpha1
+kind: Gremlin
+metadata:
+  name: gremlin-sample
+spec:
+  # Default values copied from <project_dir>/helm-charts/gremlin/values.yaml
+  affinity: {}
+  chaoimage:
+    pullPolicy: Always
+    repository: gremlin/chao
+    tag: latest
+  fullnameOverride: ""
+  gremlin:
+    apparmor: null
+    cgroup:
+      root: /sys/fs/cgroup
+    client:
+      tags: ""
+    collect:
+      processes: false
+    container:
+      driver: docker
+    hostNetwork: false
+    hostPID: false
+    installK8sClient: true
+    podSecurity:
+      allowPrivilegeEscalation: false
+      capabilities:
+      - KILL
+      - NET_ADMIN
+      - SYS_BOOT
+      - SYS_TIME
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - SETFCAP
+      - AUDIT_WRITE
+      - MKNOD
+      - SYS_CHROOT
+      - NET_RAW
+      fsGroup:
+        rule: RunAsAny
+      podSecurityPolicy:
+        create: false
+        runAsUser:
+          rule: RunAsAny
+        seLinux:
+          rule: MustRunAs
+          seLinuxOptions:
+            type: gremlin.process
+      privileged: false
+      readOnlyRootFilesystem: false
+      seccomp:
+        enabled: false
+        profile: localhost/gremlin
+        root: /var/lib/kubelet/seccomp
+      securityContextConstraints:
+        allowHostDirVolumePlugin: true
+        create: false
+        runAsUser:
+          type: RunAsAny
+        seLinuxContext:
+          seLinuxOptions:
+            type: gremlin.process
+          type: MustRunAs
+      supplementalGroups:
+        rule: RunAsAny
+      volumes:
+      - configMap
+      - secret
+      - hostPath
+    resources: {}
+    secret:
+      certificate: null
+      clusterID: null
+      key: null
+      managed: false
+      teamID: null
+      teamSecret: null
+      type: certificate
+    serviceAccount:
+      create: true
+  image:
+    pullPolicy: Always
+    repository: gremlin/gremlin
+    tag: latest
+  nameOverride: ""
+  nodeSelector: {}
+  tolerations: []
+  
+  
